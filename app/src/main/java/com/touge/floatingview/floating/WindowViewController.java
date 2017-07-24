@@ -54,10 +54,10 @@ public class WindowViewController {
     return new Point(params.x, params.y);
   }
 
-  public void scaleView(View view, float ratio) {
+  public void scaleView(View view, float ratio, int initialSize) {
     WindowManager.LayoutParams params = (WindowManager.LayoutParams) view.getLayoutParams();
-    params.width *= ratio;
-    params.height *= ratio;
+    params.width = (int) (initialSize * ratio);
+    params.height = (int) (initialSize * ratio);
     mWindowManager.updateViewLayout(view, params);
   }
 

@@ -18,8 +18,11 @@ import android.view.WindowManager;
 import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+
 import com.touge.floatingview.R;
 import com.touge.floatingview.Utils;
+
+import static com.touge.floatingview.floating.BubbleView.BUBBLE_INITIAL_SIZE;
 
 public class BubbleLayout implements View.OnTouchListener {
   private static final int MAX_SCALE_RATIO = 2;
@@ -70,7 +73,7 @@ public class BubbleLayout implements View.OnTouchListener {
   private Point mDisplayPoint = new Point();
   private Point mPreResetPoint = new Point();
 
-  public BubbleLayout(Context ctx) {
+  public BubbleLayout(final Context ctx) {
     mContext = ctx;
     mHandler = new BubbleHandler();
     mWindowViewController =
@@ -87,28 +90,25 @@ public class BubbleLayout implements View.OnTouchListener {
       @Override public boolean onSingleTap() {
         dockBubble(mResetMode ? DOCK_BACK : DOCK_RESET);
         showContent();
-        //test scale
-        //mWindowViewController.scaleView(mBubbleView, mScaleRatio);
-        //mBubbleView.scale(mScaleRatio);
-        //mScaleRatio += 0.3;
-        //WindowManager.LayoutParams params =
-        //    (WindowManager.LayoutParams) mBubbleView.getLayoutParams();
-        //params.width *= mScaleRatio;
-        //params.height *= mScaleRatio;
-        //mBubbleView.setLayoutParams(params);
-        //Log.d("@@@", "bubble width:"
-        //    + mBubbleView.getWidth()
-        //    + ", height:"
-        //    + mBubbleView.getHeight()
-        //    + "   window w:"
-        //    + params.width
-        //    + ", h:"
-        //    + params.height
-        //    + ", x:"
-        //    + params.x
-        //    + ", y:"
-        //    + params.y
-        //); 
+//        test scale
+//        mScaleRatio += 0.3;
+//        mWindowViewController.scaleView(mBubbleView, mScaleRatio, Utils.dp(ctx, BUBBLE_INITIAL_SIZE));
+//        mBubbleView.scale(mScaleRatio);
+//        WindowManager.LayoutParams params =
+//            (WindowManager.LayoutParams) mBubbleView.getLayoutParams();
+//        Log.d("@@@", "bubble width:"
+//            + mBubbleView.getWidth()
+//            + ", height:"
+//            + mBubbleView.getHeight()
+//            + "   window w:"
+//            + params.width
+//            + ", h:"
+//            + params.height
+//            + ", x:"
+//            + params.x
+//            + ", y:"
+//            + params.y
+//        );
         return true;
       }
 
@@ -143,7 +143,7 @@ public class BubbleLayout implements View.OnTouchListener {
       return;
     }
     mIsBubbleAddToWindow = true;
-    mWindowViewController.addView(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, true,
+    mWindowViewController.addView(Utils.dp(mContext, BUBBLE_INITIAL_SIZE), Utils.dp(mContext, BUBBLE_INITIAL_SIZE), true,
         mBubbleView);
   }
 
@@ -211,6 +211,7 @@ public class BubbleLayout implements View.OnTouchListener {
     boolean handled = false;
     switch (event.getActionMasked()) {
       case MotionEvent.ACTION_DOWN:
+        Log.d("@@@", "ACTION_DOWN");
         boolean hadTapMessage = mHandler.hasMessages(TAP);
         if (hadTapMessage) mHandler.removeMessages(TAP);
         if (mCurrentDownEvent != null
@@ -238,11 +239,13 @@ public class BubbleLayout implements View.OnTouchListener {
         mLastTouchPos.set(event.getRawX(), event.getRawY());
         break;
       case MotionEvent.ACTION_POINTER_DOWN:
+        Log.d("@@@", "ACTION_POINTER_DOWN event.getPointerCount()=" + event.getPointerCount());
         if (event.getPointerCount() == 2) {
           mLastDis = distanceBetweenFingers(event);
         }
         break;
       case MotionEvent.ACTION_MOVE:
+        Log.d("@@@", "ACTION_MOVE");
         if (event.getPointerCount() == 1) {
           final float dx = event.getRawX() - mLastTouchPos.x;
           final float dy = event.getRawY() - mLastTouchPos.y;
@@ -261,8 +264,10 @@ public class BubbleLayout implements View.OnTouchListener {
           }
         } else if (event.getPointerCount() == 2) {
           final float currDis = distanceBetweenFingers(event);
+          Log.d("@@@", "2 finger distance:" + currDis);
           final boolean shrink = currDis < mLastDis;
           if ((shrink && mScaleRatio >= 1) || (!shrink && mScaleRatio <= MAX_SCALE_RATIO)) {
+            Log.d("@@@", "move scale ratio: " + mScaleRatio);
             mScaleRatio = currDis / mLastDis;
             if (mScaleRatio < 1) {
               mScaleRatio = 1;
@@ -270,7 +275,7 @@ public class BubbleLayout implements View.OnTouchListener {
               mScaleRatio = MAX_SCALE_RATIO;
             }
 
-            mWindowViewController.scaleView(mBubbleView, mScaleRatio);
+            mWindowViewController.scaleView(mBubbleView, mScaleRatio, Utils.dp(mContext, BUBBLE_INITIAL_SIZE));
             mBubbleView.scale(mScaleRatio);
 
             mLastDis = currDis;
@@ -278,6 +283,7 @@ public class BubbleLayout implements View.OnTouchListener {
         }
         break;
       case MotionEvent.ACTION_UP:
+        Log.d("@@@", "ACTION_UP");
         MotionEvent currentUpEvent = MotionEvent.obtain(event);
         mStillDown = false;
         if (mDeferConfirmSingleTap
@@ -308,6 +314,7 @@ public class BubbleLayout implements View.OnTouchListener {
         }
         break;
       case MotionEvent.ACTION_CANCEL:
+        Log.d("@@@", "ACTION_CANCEL");
         mStillDown = false;
         mAlwaysInBiggerTapRegion = false;
         mHandler.removeMessages(TAP);
